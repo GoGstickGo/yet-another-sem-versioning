@@ -30,14 +30,25 @@ func readInFile(file string) (cVersion string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("issue with reading the file")
 	}
-	return string(currentVersion[1:]), nil
+	if strings.HasPrefix(string(currentVersion), "v") == true {
+		return string(currentVersion[1:]), nil
+	} else {
+		return string(currentVersion[0:]), nil
+	}
 }
-func modifyVersion(a, b, c int, s []string) (nVersion string) {
+func modifyVersion(a, b, c int, s []string) (mVersion string) {
 	mV, _ := strconv.Atoi(s[a])
 	mV++
 	nV := strconv.Itoa(mV)
-	nVersion = nV + "." + s[b] + "." + s[c]
-	return nVersion
+	switch a {
+	case 0:
+		mVersion = nV + "." + s[b] + "." + s[c]
+	case 1:
+		mVersion = s[b] + "." + nV + "." + s[c]
+	case 2:
+		mVersion = s[b] + "." + s[c] + "." + nV
+	}
+	return mVersion
 }
 
 func createNewVersion(cVersion, change string) (nVersion string) {
@@ -64,7 +75,7 @@ func modifyVersionFile(nVersion string) (err error) {
 	}
 	// create new file & modify
 	bs := []byte("v" + nVersion)
-	err = ioutil.WriteFile("VERSION", bs, 06444)
+	err = ioutil.WriteFile("VERSION", bs, 0744)
 	if err != nil {
 		return fmt.Errorf("issue occured with new version file error: %v", err)
 	}
