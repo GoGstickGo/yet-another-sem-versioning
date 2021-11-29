@@ -15,7 +15,7 @@ func Test_checkCommitMsg(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{"bad", args{commit: "sometghing"}, true},
-		{"good", args{commit: "fsdfds major"}, false},
+		{"good", args{commit: "fsdfds #major"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -26,48 +26,69 @@ func Test_checkCommitMsg(t *testing.T) {
 	}
 }
 
-func Test_modifyVersion(t *testing.T) {
-	t1 := []string{"1", "0", "0"}
+func Test_modifyVersionFile(t *testing.T) {
 	type args struct {
-		a int
-		b int
-		c int
-		s []string
+		nV string
+		f  string
+		vf bool
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantMVersion string
+		name    string
+		args    args
+		wantErr bool
 	}{
-		{"major", args{a: 0, b: 1, c: 2, s: t1}, "2.0.0"},
-		{"minor", args{a: 1, b: 0, c: 2, s: t1}, "1.1.0"},
-		{"patch", args{a: 2, b: 0, c: 1, s: t1}, "1.0.1"},
+		{"#1", args{nV: "1.0.0", f: "VERISON", vf: true}, true},
+		{"#2", args{nV: "1.0.0", f: "testFiles/VERSION", vf: true}, false},
+		{"#3", args{nV: "2.0.0", f: "testFiles/VERSION_2", vf: false}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotMVersion := modifyVersion(tt.args.a, tt.args.b, tt.args.c, tt.args.s); gotMVersion != tt.wantMVersion {
-				t.Errorf("modifyVersion() = %v, want %v", gotMVersion, tt.wantMVersion)
+			if err := modifyVersionFile(tt.args.nV, tt.args.f, tt.args.vf); (err != nil) != tt.wantErr {
+				t.Errorf("modifyVersionFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func Test_buildNewVersion(t *testing.T) {
+func Test_createVersionFile(t *testing.T) {
 	type args struct {
-		cVersion string
-		change   string
+		f string
+		m string
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantNVersion string
+		name    string
+		args    args
+		wantErr bool
 	}{
-		{"good", args{cVersion: "2.0.0", change: "major"}, "3.0.0"},
+		{"#1", args{f: "testFiles/NEW", m: "sdfdsfdsfdsf  #major adsfdsfds"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotNVersion := buildNewVersion(tt.args.cVersion, tt.args.change); gotNVersion != tt.wantNVersion {
-				t.Errorf("buildNewVersion() = %v, want %v", gotNVersion, tt.wantNVersion)
+			if err := createVersionFile(tt.args.f, tt.args.m); (err != nil) != tt.wantErr {
+				t.Errorf("createVersionFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_buildVersion(t *testing.T) {
+	type args struct {
+		cV string
+		m  string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		wantNV string
+	}{
+		{"major", args{cV: "1.0.0", m: "#major"}, "2.0.0"},
+		{"minor", args{cV: "8.2.3", m: "#minor"}, "8.3.3"},
+		{"patch", args{cV: "12.2.1", m: "#patch"}, "12.2.2"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotNV := buildVersion(tt.args.cV, tt.args.m); gotNV != tt.wantNV {
+				t.Errorf("buildVersion() = %v, want %v", gotNV, tt.wantNV)
 			}
 		})
 	}
